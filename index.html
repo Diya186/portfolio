@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diya</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#f2eff9;cursor:none}
+#cur{position:fixed;width:9px;height:9px;border-radius:50%;background:#c4b5fd;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);box-shadow:0 0 10px 3px rgba(196,181,253,.6);mix-blend-mode:screen}
+#starCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* typing stage */
+#stageTyping{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#000}
+#typeLine{font-family:'JetBrains Mono',monospace;font-size:clamp(1rem,2.2vw,1.6rem);color:#f2eff9;letter-spacing:.04em;white-space:nowrap}
+#typeLine.glow{text-shadow:0 0 18px rgba(196,181,253,.9),0 0 36px rgba(196,181,253,.4)}
+#bCursor{display:inline-block;width:2px;height:1.1em;background:#c4b5fd;vertical-align:middle;margin-left:2px;animation:blink .7s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* the floating I'm — always fixed, starts invisible */
+#imWord{
+  position:fixed;
+  font-family:'Cormorant Garamond',serif;font-weight:700;
+  color:#f2eff9;white-space:nowrap;
+  opacity:0;z-index:15;pointer-events:none;
+}
+
+/* rolling window */
+#rollWin{position:fixed;overflow:hidden;opacity:0;z-index:15}
+#rollInner{display:flex;flex-direction:column}
+.rw{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:700;
+  background:linear-gradient(135deg,#b8a9f8,#e0abfc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  white-space:nowrap;flex-shrink:0;
+}
+
+/* "I'm here" */
+#stageHere{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+#hereText{
+  font-family:'Cormorant Garamond',serif;font-weight:700;font-style:italic;
+  font-size:clamp(1.8rem,3.5vw,3.2rem);
+  color:#f2eff9;text-align:center;line-height:1.2;max-width:18ch;letter-spacing:-.01em;opacity:0;
+}
+#hereText em{
+  background:linear-gradient(135deg,#b8a9f8,#e0abfc,#93c5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-style:inherit;
+}
+
+/* hub */
+#stageHub{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2rem;padding:2rem;opacity:0;pointer-events:none}
+#stageHub.live{pointer-events:all}
+.hSub{font-family:'Plus Jakarta Sans',sans-serif;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:#5a5570;opacity:0}
+.hTitle{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:700;font-size:clamp(1.2rem,2.5vw,2rem);color:#f2eff9;text-align:center;opacity:0;transform:translateY(12px)}
+#chars{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;width:min(960px,90vw)}
+.cc{display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.cc.in{opacity:1;transform:translateY(0)}
+.ccWrap{width:100%;aspect-ratio:.72;display:flex;align-items:flex-end;justify-content:center}
+.ccImg{width:85%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));animation:cfloat 4s ease-in-out infinite;transform-origin:bottom center}
+.cc:nth-child(1) .ccImg{animation-delay:0s}
+.cc:nth-child(2) .ccImg{animation-delay:.8s}
+.cc:nth-child(3) .ccImg{animation-delay:1.6s}
+.cc:nth-child(4) .ccImg{animation-delay:2.4s}
+@keyframes cfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.cc:hover .ccImg{animation-play-state:paused}
+.cc[data-w=coder]:hover .ccImg{filter:drop-shadow(0 0 28px rgba(34,211,238,.6))}
+.cc[data-w=creator]:hover .ccImg{filter:drop-shadow(0 0 28px rgba(251,146,60,.6))}
+.cc[data-w=writer]:hover .ccImg{filter:drop-shadow(0 0 28px rgba(129,140,248,.6))}
+.cc[data-w=facts]:hover .ccImg{filter:drop-shadow(0 0 28px rgba(249,168,212,.6))}
+.stk{position:absolute;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .25s;animation:stkf 3s ease-in-out infinite}
+.cc:hover .stk{opacity:1}
+@keyframes stkf{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+.cc[data-w=coder] .stk:nth-child(1){top:8%;left:-5%;animation-delay:0s}
+.cc[data-w=coder] .stk:nth-child(2){top:30%;right:-5%;animation-delay:.4s}
+.cc[data-w=coder] .stk:nth-child(3){top:58%;left:-8%;animation-delay:.8s}
+.cc[data-w=coder] .stk:nth-child(4){bottom:16%;right:-4%;animation-delay:.2s}
+.cc[data-w=creator] .stk:nth-child(1){top:8%;right:-5%;animation-delay:.1s}
+.cc[data-w=creator] .stk:nth-child(2){top:35%;left:-8%;animation-delay:.5s}
+.cc[data-w=creator] .stk:nth-child(3){bottom:20%;right:-7%;animation-delay:.9s}
+.cc[data-w=creator] .stk:nth-child(4){top:60%;left:-5%;animation-delay:.3s}
+.cc[data-w=writer] .stk:nth-child(1){top:12%;left:-7%;animation-delay:.2s}
+.cc[data-w=writer] .stk:nth-child(2){top:40%;right:-7%;animation-delay:.6s}
+.cc[data-w=writer] .stk:nth-child(3){bottom:18%;left:-5%;animation-delay:0s}
+.cc[data-w=writer] .stk:nth-child(4){top:65%;right:-5%;animation-delay:.4s}
+.cc[data-w=facts] .stk:nth-child(1){top:6%;right:-7%;animation-delay:.3s}
+.cc[data-w=facts] .stk:nth-child(2){top:32%;left:-9%;animation-delay:.7s}
+.cc[data-w=facts] .stk:nth-child(3){bottom:22%;right:-5%;animation-delay:.1s}
+.cc[data-w=facts] .stk:nth-child(4){top:57%;left:-5%;animation-delay:.5s}
+.ccLabel{margin-top:.7rem;text-align:center}
+.ccNum{font-size:.58rem;letter-spacing:.18em;color:#5a5570;display:block;margin-bottom:.1rem}
+.ccName{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:700;font-size:.92rem;color:#f2eff9;display:block;transition:color .2s}
+.cc[data-w=coder]:hover .ccName{color:#22d3ee}
+.cc[data-w=creator]:hover .ccName{color:#fb923c}
+.cc[data-w=writer]:hover .ccName{color:#818cf8}
+.cc[data-w=facts]:hover .ccName{color:#f9a8d4}
+
+#wov{position:fixed;inset:0;z-index:500;opacity:0;pointer-events:none}
+#skipBtn{position:fixed;bottom:1.8rem;right:1.8rem;z-index:200;font-family:'Plus Jakarta Sans',sans-serif;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:#5a5570;background:none;border:1px solid rgba(255,255,255,.08);padding:.4rem .85rem;border-radius:2rem;cursor:pointer;opacity:0;pointer-events:none;transition:color .2s,border-color .2s}
+#skipBtn.on{opacity:1;pointer-events:all}
+#skipBtn:hover{color:#f2eff9;border-color:rgba(255,255,255,.2)}
+#sndBtn{position:fixed;bottom:1.8rem;left:1.8rem;z-index:200;font-size:.85rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:50%;width:32px;height:32px;cursor:pointer;opacity:1;display:flex;align-items:center;justify-content:center}
+@media(max-width:640px){#chars{grid-template-columns:repeat(2,1fr);gap:1rem}}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<canvas id="starCanvas"></canvas>
+<div id="wov"></div>
+
+<!-- typing -->
+<div id="stageTyping">
+  <div id="typeBox">
+    <span id="typeLine"></span><span id="bCursor"></span>
+  </div>
+</div>
+
+<!-- floating I'm (independent of typing stage) -->
+<div id="imWord">I'm</div>
+
+<!-- rolling window (independent) -->
+<div id="rollWin"><div id="rollInner"></div></div>
+
+<!-- I'm here -->
+<div id="stageHere"><p id="hereText">I'm here to make a <em>difference.</em></p></div>
+
+<!-- hub -->
+<div id="stageHub">
+  <span class="hSub" id="hSub">there are many versions of me</span>
+  <h1 class="hTitle" id="hTitle">Which one would you like to meet first?</h1>
+  <div id="chars">
+    <div class="cc" data-w="coder" onclick="enterWorld('coder')">
+      <span class="stk">💻</span><span class="stk">⟨/⟩</span><span class="stk">⚡</span><span class="stk">🔒</span>
+      <div class="ccWrap"><img class="ccImg" src="coder.png" alt="Coder Diya"/></div>
+      <div class="ccLabel"><span class="ccNum">CODE</span><span class="ccName">Coder Diya</span></div>
+    </div>
+    <div class="cc" data-w="creator" onclick="enterWorld('creator')">
+      <span class="stk">📱</span><span class="stk">🎬</span><span class="stk">❤️</span><span class="stk">✨</span>
+      <div class="ccWrap"><img class="ccImg" src="creator.png" alt="Creator Diya"/></div>
+      <div class="ccLabel"><span class="ccNum">CREATE</span><span class="ccName">Creator Diya</span></div>
+    </div>
+    <div class="cc" data-w="writer" onclick="enterWorld('writer')">
+      <span class="stk">✍️</span><span class="stk">🌙</span><span class="stk">🪶</span><span class="stk">📖</span>
+      <div class="ccWrap"><img class="ccImg" src="writer.png" alt="Writer Diya"/></div>
+      <div class="ccLabel"><span class="ccNum">WRITE</span><span class="ccName">Writer Diya</span></div>
+    </div>
+    <div class="cc" data-w="facts" onclick="enterWorld('facts')">
+      <span class="stk">🧶</span><span class="stk">🎵</span><span class="stk">🌸</span><span class="stk">☕</span>
+      <div class="ccWrap"><img class="ccImg" src="random.png" alt="Just Diya"/></div>
+      <div class="ccLabel"><span class="ccNum">EXPLORE</span><span class="ccName">Just Diya</span></div>
+    </div>
+  </div>
+</div>
+
+<button id="skipBtn" onclick="skipToHub()">Skip intro</button>
+<button id="sndBtn">🔊</button>
+
+<script>
+// ── CURSOR ──
+document.addEventListener('mousemove',function(e){
+  var c=document.getElementById('cur');
+  c.style.left=e.clientX+'px';c.style.top=e.clientY+'px';
+});
+
+// ── AUDIO ──
+var sndOn=true,actx=null;
+function initAudio(){
+  if(actx)return;
+  try{
+    actx=new(window.AudioContext||window.webkitAudioContext)();
+    // play a silent buffer to fully unlock
+    var buf=actx.createBuffer(1,1,22050);
+    var s=actx.createBufferSource();s.buffer=buf;s.connect(actx.destination);s.start();
+  }catch(e){}
+}
+['click','keydown','touchstart','mousedown','mousemove'].forEach(function(ev){
+  document.addEventListener(ev,initAudio,{once:true});
+});
+document.getElementById('sndBtn').onclick=function(){sndOn=!sndOn;document.getElementById('sndBtn').textContent=sndOn?'🔊':'🔇';};
+
+function tone(f,dur,vol,type){
+  if(!sndOn||!actx)return;
+  try{
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.connect(g);g.connect(actx.destination);
+    o.type=type||'triangle';o.frequency.value=f;
+    g.gain.setValueAtTime(vol||.07,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);
+    o.start();o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+
+// mechanical typewriter click — layered noise + tone
+function keyTick(){
+  if(!sndOn||!actx)return;
+  try{
+    // click body — short noise burst
+    var bufSize=actx.sampleRate*.025;
+    var buf=actx.createBuffer(1,bufSize,actx.sampleRate);
+    var d=buf.getChannelData(0);
+    for(var i=0;i<bufSize;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/bufSize,4);
+    var src=actx.createBufferSource();
+    src.buffer=buf;
+    var f1=actx.createBiquadFilter();f1.type='bandpass';f1.frequency.value=2200;f1.Q.value=0.8;
+    var g1=actx.createGain();g1.gain.setValueAtTime(.18,actx.currentTime);g1.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.025);
+    src.connect(f1);f1.connect(g1);g1.connect(actx.destination);
+    src.start();
+
+    // subtle pitch — gives it a typewriter "thock"
+    var o=actx.createOscillator(),g2=actx.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(180+Math.random()*80,actx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(80,actx.currentTime+.03);
+    g2.gain.setValueAtTime(.06,actx.currentTime);
+    g2.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.03);
+    o.connect(g2);g2.connect(actx.destination);
+    o.start();o.stop(actx.currentTime+.03);
+  }catch(e){}
+}
+
+// delete key — slightly different pitch
+function deleteTick(){
+  if(!sndOn||!actx)return;
+  try{
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(120,actx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(60,actx.currentTime+.04);
+    g.gain.setValueAtTime(.05,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.04);
+    o.connect(g);g.connect(actx.destination);
+    o.start();o.stop(actx.currentTime+.04);
+  }catch(e){}
+}
+
+// rolling word whoosh — soft ascending tone
+function rollChime(idx){
+  if(!sndOn||!actx)return;
+  try{
+    var freqs=[392,440,494,523,587,659,698,784];
+    var f=freqs[idx%freqs.length];
+    // soft pad
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type='sine';o.frequency.value=f;
+    g.gain.setValueAtTime(0,actx.currentTime);
+    g.gain.linearRampToValueAtTime(.07,actx.currentTime+.04);
+    g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.5);
+    o.connect(g);g.connect(actx.destination);
+    o.start();o.stop(actx.currentTime+.5);
+    // harmonic above
+    var o2=actx.createOscillator(),g2=actx.createGain();
+    o2.type='triangle';o2.frequency.value=f*2;
+    g2.gain.setValueAtTime(0,actx.currentTime);
+    g2.gain.linearRampToValueAtTime(.03,actx.currentTime+.04);
+    g2.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.35);
+    o2.connect(g2);g2.connect(actx.destination);
+    o2.start();o2.stop(actx.currentTime+.35);
+  }catch(e){}
+}
+
+function chime(f){tone(f||523,.7,.06,'triangle');}
+function revealChime(){[523,659,784,1046].forEach(function(f,i){setTimeout(function(){chime(f);},i*90);});}
+
+// ── STARS — gradual build ──
+var SC=document.getElementById('starCanvas'),SX=SC.getContext('2d');
+var stars=[];
+var starsActive=false;
+function initStars(){
+  SC.width=innerWidth;SC.height=innerHeight;
+  stars=[];
+  // start with 0 stars, they'll be added gradually
+}
+function addStar(){
+  stars.push({
+    x:Math.random()*SC.width,y:Math.random()*SC.height,
+    r:Math.random()*1.1+.15,o:0, // start invisible
+    maxO:Math.random()*.3+.06,
+    sp:Math.random()*.4+.05,
+    born:Date.now()
+  });
+}
+function drawStars(){
+  SX.clearRect(0,0,SC.width,SC.height);
+  var now=Date.now();
+  stars.forEach(function(s){
+    // fade in each star over 2s after birth
+    var age=Math.min((now-s.born)/2000,1);
+    var o=s.maxO*age*(0.6+0.4*Math.abs(Math.sin(now*s.sp*.001)));
+    SX.beginPath();SX.arc(s.x,s.y,s.r,0,Math.PI*2);
+    SX.fillStyle='rgba(200,190,255,'+o+')';SX.fill();
+  });
+}
+var starLoop=null;
+function startStarLoop(){
+  if(starLoop)return;
+  function loop(){SX.clearRect&&drawStars();starLoop=requestAnimationFrame(loop);}
+  starLoop=requestAnimationFrame(loop);
+}
+function beginGradualStars(){
+  // add stars one by one over ~8 seconds
+  startStarLoop();
+  var total=140,added=0;
+  var iv=setInterval(function(){
+    if(added>=total){clearInterval(iv);return;}
+    var batch=Math.floor(Math.random()*3)+1;
+    for(var i=0;i<batch&&added<total;i++){addStar();added++;}
+  },60);
+}
+
+// ── HELPERS ──
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function animRAF(dur,fn){
+  return new Promise(function(res){
+    var t0=null;
+    function tick(now){
+      if(!t0)t0=now;
+      var p=Math.min((now-t0)/dur,1);
+      fn(p);
+      if(p<1)requestAnimationFrame(tick);else res();
+    }
+    requestAnimationFrame(tick);
+  });
+}
+function lerp(a,b,t){return a+(b-a)*t;}
+function easeOut(t){return 1-Math.pow(1-t,3);}
+function easeInOut(t){return t<.5?2*t*t:-1+(4-2*t)*t;}
+function fadeEl(el,from,to,dur){
+  return animRAF(dur,function(p){el.style.opacity=lerp(from,to,easeOut(p));});
+}
+
+// ── TYPING ──
+var typeEl=document.getElementById('typeLine');
+function typeString(str,speed){
+  return new Promise(function(res){
+    var i=0;
+    function next(){
+      if(skipped){res();return;}
+      if(i>str.length){res();return;}
+      typeEl.textContent=str.slice(0,i);
+      if(i<str.length)keyTick();
+      i++;
+      setTimeout(next,speed+Math.random()*speed*.4);
+    }
+    next();
+  });
+}
+function deleteStr(speed){
+  return new Promise(function(res){
+    var cur=typeEl.textContent;
+    var i=cur.length;
+    function next(){
+      if(skipped){res();return;}
+      typeEl.textContent=cur.slice(0,i);
+      if(i>0)deleteTick();
+      i--;
+      if(i<0)res();
+      else setTimeout(next,speed+Math.random()*speed*.2);
+    }
+    next();
+  });
+}
+
+// ── MAIN SEQUENCE ──
+var skipped=false;
+
+async function runIntro(){
+  await sleep(700);if(skipped)return;
+
+  // Q1
+  await typeString('who am i?',85);
+  await sleep(1400);if(skipped)return;
+  await deleteStr(50);
+  await sleep(500);if(skipped)return;
+
+  // Q2
+  await typeString('what am i?',85);
+  await sleep(1400);if(skipped)return;
+  await deleteStr(50);
+  await sleep(500);if(skipped)return;
+
+  // Q3
+  await typeString('why am i?',85);
+  await sleep(2000);if(skipped)return;
+  await deleteStr(50);
+  await sleep(800);if(skipped)return;
+
+  // Final — slower
+  await typeString("hi, i'm diya.",62);
+  if(skipped)return;
+
+  // glow on "hi, i'm diya."
+  typeEl.className='glow';
+  await sleep(2200);if(skipped)return;
+
+  // ── TRANSITION: fade out "hi," keep "i'm" ──
+  // Split into two spans inside typeLine
+  typeEl.innerHTML='<span id="sp-hi">hi, </span><span id="sp-im">i\'m</span><span id="sp-diya"> diya.</span>';
+
+  // stars begin appearing now (gradual)
+  beginGradualStars();
+
+  await sleep(300);if(skipped)return;
+
+  // fade out "hi," and " diya." simultaneously
+  var spHi=document.getElementById('sp-hi');
+  var spDiya=document.getElementById('sp-diya');
+  await animRAF(600,function(p){
+    spHi.style.opacity=1-easeOut(p);
+    spDiya.style.opacity=1-easeOut(p);
+  });
+  if(skipped)return;
+
+  await sleep(400);if(skipped)return;
+
+  // ── slide "i'm" from center to left ──
+  // measure the current position of sp-im
+  var spIm=document.getElementById('sp-im');
+  var r=spIm.getBoundingClientRect();
+  var startX=r.left, startY=r.top;
+  var startSz=parseFloat(getComputedStyle(typeEl).fontSize); // inherit from typeLine
+
+  // set up the floating #imWord element
+  var imEl=document.getElementById('imWord');
+  imEl.style.fontFamily="'Cormorant Garamond',serif";
+  imEl.style.fontWeight='700';
+  imEl.style.fontSize=startSz+'px';
+  imEl.style.left=startX+'px';
+  imEl.style.top=startY+'px';
+  imEl.style.opacity='1';
+
+  // hide the typing stage (it served its purpose)
+  document.getElementById('stageTyping').style.opacity='0';
+  document.getElementById('bCursor').style.display='none';
+
+  // target position: left side, bigger
+  var targetSz=Math.min(innerWidth*.055,68);
+  var targetX=innerWidth*.10;
+  var targetY=innerHeight*.5-targetSz*.55;
+
+  // animate slide
+  await animRAF(850,function(p){
+    var e=easeInOut(p);
+    imEl.style.left=lerp(startX,targetX,e)+'px';
+    imEl.style.top=lerp(startY,targetY,e)+'px';
+    imEl.style.fontSize=lerp(startSz,targetSz,e)+'px';
+  });
+  if(skipped)return;
+
+  // ── ROLLING WORDS ──
+  await runRolling(imEl,targetX,targetY,targetSz);
+}
+
+// ── ROLLING ──
+var WORDS1=['a creator.','a coder.','a storyteller.','an editor.','a student.','an entrepreneur.'];
+var WORDS2=["a dreamer.","a collector of memories.","fueled by late-night ideas.","the friend who takes too many photos.","someone who starts too many projects.","a hopeless romantic."];
+var STILL="still figuring it out.";
+var FAST=['Creator','Coder','Writer','Dreamer','Student','Entrepreneur','Storyteller','Memory Collector','Creator','Coder','Writer','Dreamer'];
+
+async function runRolling(imEl,imX,imY,imSz){
+  if(skipped)return;
+  var win=document.getElementById('rollWin');
+  var inner=document.getElementById('rollInner');
+  var lineH=imSz*1.1;
+
+  // measure imEl width to position window
+  var imW=imEl.getBoundingClientRect().width;
+  win.style.position='fixed';
+  win.style.left=(imX+imW+innerWidth*.024)+'px';
+  win.style.top=imY+'px';
+  win.style.height=lineH+'px';
+  win.style.opacity='1';
+
+  var totalItems=0,rollIdx=0;
+
+  async function rollWord(text,holdMs,spd){
+    if(skipped)return;
+    var div=document.createElement('div');
+    div.className='rw';
+    div.textContent=text;
+    div.style.fontSize=imSz+'px';
+    div.style.height=lineH+'px';
+    div.style.lineHeight=lineH+'px';
+    inner.appendChild(div);
+    totalItems++;
+    var fromY=totalItems<=1?0:-((totalItems-2)*lineH);
+    var toY=-((totalItems-1)*lineH);
+    await animRAF(spd||360,function(p){
+      inner.style.transform='translateY('+lerp(fromY,toY,easeOut(p))+'px)';
+    });
+    rollChime(rollIdx++);
+    if(holdMs>0)await sleep(holdMs);
+  }
+
+  for(var i=0;i<WORDS1.length;i++){if(skipped)return;await rollWord(WORDS1[i],820,340);}
+  for(var j=0;j<WORDS2.length;j++){if(skipped)return;await rollWord(WORDS2[j],900+j*180,370);}
+
+  // pause
+  if(skipped)return;
+  await rollWord(STILL,0,360);
+  await sleep(3200);if(skipped)return;
+
+  // fast spin
+  var spd=300;
+  for(var k=0;k<FAST.length;k++){
+    if(skipped)return;
+    spd=Math.max(35,spd-22);
+    await rollWord(FAST[k],0,spd);
+  }
+  if(skipped)return;
+
+  // everything disappears
+  await Promise.all([
+    fadeEl(imEl,1,0,400),
+    fadeEl(win,1,0,400)
+  ]);
+  imEl.style.display='none';
+  win.style.display='none';
+
+  await runHere();
+}
+
+// ── I'M HERE ──
+async function runHere(){
+  if(skipped)return;
+  var sc=document.getElementById('stageHere');
+  var ht=document.getElementById('hereText');
+  sc.style.opacity='1';
+  await fadeEl(ht,0,1,1100);
+  revealChime();
+  await sleep(3400);if(skipped)return;
+  await fadeEl(sc,1,0,600);
+  sc.style.opacity='0';
+  await sleep(200);
+  runHub();
+}
+
+// ── HUB ──
+function runHub(){
+  var sd=document.getElementById('stageHub');
+  sd.style.opacity='1';sd.classList.add('live');
+  setTimeout(function(){
+    var hs=document.getElementById('hSub');
+    hs.style.transition='opacity .6s ease';hs.style.opacity='1';
+  },250);
+  setTimeout(function(){
+    var ht=document.getElementById('hTitle');
+    ht.style.transition='opacity .7s ease,transform .7s ease';
+    ht.style.opacity='1';ht.style.transform='translateY(0)';
+  },450);
+  setTimeout(function(){
+    document.querySelectorAll('.cc').forEach(function(c,i){
+      setTimeout(function(){c.classList.add('in');},i*140+100);
+    });
+    revealChime();
+  },650);
+  document.getElementById('skipBtn').classList.remove('on');
+}
+
+// ── SKIP ──
+function skipToHub(){
+  skipped=true;
+  document.getElementById('stageTyping').style.display='none';
+  document.getElementById('imWord').style.display='none';
+  document.getElementById('rollWin').style.display='none';
+  document.getElementById('stageHere').style.opacity='0';
+  document.getElementById('bCursor').style.display='none';
+  // show stars fully
+  beginGradualStars();
+  runHub();
+}
+
+// ── WORLD ──
+var WC={coder:'#22d3ee',creator:'#fb923c',writer:'#818cf8',facts:'#f9a8d4'};
+var WF={coder:'world-coder.html',creator:'world-creator.html',writer:'world-writer.html',facts:'world-facts.html'};
+function enterWorld(w){
+  sessionStorage.setItem('diya_visited','1');
+  var ov=document.getElementById('wov');
+  ov.style.background=WC[w];
+  ov.style.transition='opacity .5s ease';
+  ov.style.opacity='1';
+  chime(880);
+  setTimeout(function(){window.location.href=WF[w];},540);
+}
+
+// ── BOOT ──
+window.addEventListener('resize',initStars);
+initStars();
+
+if(sessionStorage.getItem('diya_visited')){
+  document.getElementById('stageTyping').style.display='none';
+  document.getElementById('bCursor').style.display='none';
+  document.getElementById('sndBtn').style.opacity='1';
+  beginGradualStars();
+  runHub();
+} else {
+  document.getElementById('skipBtn').classList.add('on');
+  runIntro();
+}
+</script>
+</body>
+</html>

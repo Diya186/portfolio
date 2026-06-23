@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diya</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#f2eff9;cursor:none}
+
+/* cursor */
+#cur{position:fixed;width:9px;height:9px;border-radius:50%;background:#c4b5fd;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);box-shadow:0 0 10px 3px rgba(196,181,253,.6);mix-blend-mode:screen}
+
+/* star canvas — behind everything */
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 1.5s ease}
+
+/* ── STAGE A: typing ── */
+#stageA{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center}
+#typeBox{
+  font-family:'JetBrains Mono',monospace;
+  font-size:clamp(1.1rem,2.5vw,1.8rem);
+  color:#f2eff9;
+  letter-spacing:.04em;
+  white-space:nowrap;
+  position:relative;
+}
+#typeBox .glow{
+  text-shadow:0 0 20px rgba(196,181,253,.8),0 0 40px rgba(196,181,253,.4);
+}
+#blinkCursor{
+  display:inline-block;width:2px;height:1.1em;
+  background:#c4b5fd;vertical-align:middle;margin-left:2px;
+  animation:blink .7s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── STAGE B: I'm + rolling ── */
+#stageB{position:fixed;inset:0;z-index:10;display:flex;align-items:center;opacity:0;pointer-events:none}
+#im-el{
+  font-family:'Cormorant Garamond',serif;font-weight:700;
+  font-size:clamp(3.5rem,8vw,8rem);color:#f2eff9;
+  white-space:nowrap;position:fixed;opacity:0;
+}
+#roll-win{position:fixed;overflow:hidden;opacity:0}
+#roll-inner{display:flex;flex-direction:column;will-change:transform}
+.roll-word{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:700;
+  background:linear-gradient(135deg,#b8a9f8,#e0abfc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  white-space:nowrap;line-height:1.05;flex-shrink:0;
+}
+
+/* ── STAGE C: here ── */
+#stageC{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+#here-el{
+  font-family:'Cormorant Garamond',serif;font-weight:700;
+  font-size:clamp(2.8rem,6vw,6.5rem);color:#f2eff9;
+  text-align:center;line-height:1.15;max-width:14ch;letter-spacing:-.01em;
+}
+#here-el em{
+  font-style:italic;
+  background:linear-gradient(135deg,#b8a9f8,#e0abfc,#93c5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+/* ── STAGE D: hub ── */
+#stageD{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;padding:2rem;opacity:0;pointer-events:none}
+#stageD.live{pointer-events:all}
+.hub-sub{font-family:'Plus Jakarta Sans',sans-serif;font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:#5a5570;opacity:0;transition:opacity .6s ease}
+.hub-sub.in{opacity:1}
+.hub-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:700;font-size:clamp(1.3rem,2.8vw,2.2rem);text-align:center;color:#f2eff9;opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
+.hub-title.in{opacity:1;transform:translateY(0)}
+
+/* chars */
+#chars{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;width:min(980px,90vw)}
+.cc{display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease}
+.cc.in{opacity:1;transform:translateY(0)}
+.cc-wrap{width:100%;aspect-ratio:.72;display:flex;align-items:flex-end;justify-content:center}
+.cc-img{width:85%;height:100%;object-fit:contain;object-position:bottom;
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));
+  animation:cfloat 4s ease-in-out infinite;transform-origin:bottom center}
+.cc:nth-child(1) .cc-img{animation-delay:0s}
+.cc:nth-child(2) .cc-img{animation-delay:.8s}
+.cc:nth-child(3) .cc-img{animation-delay:1.6s}
+.cc:nth-child(4) .cc-img{animation-delay:2.4s}
+@keyframes cfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.cc:hover .cc-img{animation-play-state:paused}
+.cc[data-w=coder]:hover .cc-img{filter:drop-shadow(0 0 28px rgba(34,211,238,.6))}
+.cc[data-w=creator]:hover .cc-img{filter:drop-shadow(0 0 28px rgba(251,146,60,.6))}
+.cc[data-w=writer]:hover .cc-img{filter:drop-shadow(0 0 28px rgba(129,140,248,.6))}
+.cc[data-w=facts]:hover .cc-img{filter:drop-shadow(0 0 28px rgba(249,168,212,.6))}
+
+/* stickers */
+.stk{position:absolute;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .25s;animation:stkf 3s ease-in-out infinite}
+.cc:hover .stk{opacity:1}
+@keyframes stkf{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+.cc[data-w=coder] .stk:nth-child(1){top:8%;left:-5%;animation-delay:0s}
+.cc[data-w=coder] .stk:nth-child(2){top:30%;right:-5%;animation-delay:.4s}
+.cc[data-w=coder] .stk:nth-child(3){top:58%;left:-8%;animation-delay:.8s}
+.cc[data-w=coder] .stk:nth-child(4){bottom:16%;right:-4%;animation-delay:.2s}
+.cc[data-w=creator] .stk:nth-child(1){top:8%;right:-5%;animation-delay:.1s}
+.cc[data-w=creator] .stk:nth-child(2){top:35%;left:-8%;animation-delay:.5s}
+.cc[data-w=creator] .stk:nth-child(3){bottom:20%;right:-7%;animation-delay:.9s}
+.cc[data-w=creator] .stk:nth-child(4){top:60%;left:-5%;animation-delay:.3s}
+.cc[data-w=writer] .stk:nth-child(1){top:12%;left:-7%;animation-delay:.2s}
+.cc[data-w=writer] .stk:nth-child(2){top:40%;right:-7%;animation-delay:.6s}
+.cc[data-w=writer] .stk:nth-child(3){bottom:18%;left:-5%;animation-delay:0s}
+.cc[data-w=writer] .stk:nth-child(4){top:65%;right:-5%;animation-delay:.4s}
+.cc[data-w=facts] .stk:nth-child(1){top:6%;right:-7%;animation-delay:.3s}
+.cc[data-w=facts] .stk:nth-child(2){top:32%;left:-9%;animation-delay:.7s}
+.cc[data-w=facts] .stk:nth-child(3){bottom:22%;right:-5%;animation-delay:.1s}
+.cc[data-w=facts] .stk:nth-child(4){top:57%;left:-5%;animation-delay:.5s}
+
+.cc-label{margin-top:.8rem;text-align:center}
+.cc-num{font-size:.58rem;letter-spacing:.18em;color:#5a5570;display:block;margin-bottom:.15rem}
+.cc-name{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:700;font-size:.95rem;color:#f2eff9;display:block;transition:color .2s}
+.cc[data-w=coder]:hover .cc-name{color:#22d3ee}
+.cc[data-w=creator]:hover .cc-name{color:#fb923c}
+.cc[data-w=writer]:hover .cc-name{color:#818cf8}
+.cc[data-w=facts]:hover .cc-name{color:#f9a8d4}
+
+/* world overlay */
+#wov{position:fixed;inset:0;z-index:500;opacity:0;pointer-events:none;transition:opacity .5s ease}
+
+/* skip + sound */
+#skipBtn{position:fixed;bottom:1.8rem;right:1.8rem;z-index:200;font-family:'Plus Jakarta Sans',sans-serif;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#5a5570;background:none;border:1px solid rgba(255,255,255,.08);padding:.45rem .9rem;border-radius:2rem;cursor:pointer;opacity:0;pointer-events:none;transition:color .2s,border-color .2s}
+#skipBtn.on{opacity:1;pointer-events:all}
+#skipBtn:hover{color:#f2eff9;border-color:rgba(255,255,255,.2)}
+#sndBtn{position:fixed;bottom:1.8rem;left:1.8rem;z-index:200;font-size:.9rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:50%;width:34px;height:34px;cursor:pointer;opacity:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
+#sndBtn.on{opacity:1;pointer-events:all}
+
+@media(max-width:640px){#chars{grid-template-columns:repeat(2,1fr);gap:1.2rem}}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<canvas id="stars"></canvas>
+<div id="wov"></div>
+
+<!-- STAGE A: typing -->
+<div id="stageA">
+  <div id="typeBox"><span id="typeText"></span><span id="blinkCursor"></span></div>
+</div>
+
+<!-- STAGE B: I'm + rolling -->
+<div id="stageB">
+  <div id="im-el">I'm</div>
+  <div id="roll-win"><div id="roll-inner"></div></div>
+</div>
+
+<!-- STAGE C: I'm here to make a difference -->
+<div id="stageC">
+  <p id="here-el">I'm here to make a <em>difference.</em></p>
+</div>
+
+<!-- STAGE D: hub -->
+<div id="stageD">
+  <span class="hub-sub" id="hubSub">there are many versions of me</span>
+  <h1 class="hub-title" id="hubTitle">Which one would you like to meet first?</h1>
+  <div id="chars">
+    <div class="cc" data-w="coder" onclick="enterWorld('coder')">
+      <span class="stk">💻</span><span class="stk">⟨/⟩</span><span class="stk">⚡</span><span class="stk">🔒</span>
+      <div class="cc-wrap"><img class="cc-img" src="coder.png" alt="Coder Diya"/></div>
+      <div class="cc-label"><span class="cc-num">CODE</span><span class="cc-name">Coder Diya</span></div>
+    </div>
+    <div class="cc" data-w="creator" onclick="enterWorld('creator')">
+      <span class="stk">📱</span><span class="stk">🎬</span><span class="stk">❤️</span><span class="stk">✨</span>
+      <div class="cc-wrap"><img class="cc-img" src="creator.png" alt="Creator Diya"/></div>
+      <div class="cc-label"><span class="cc-num">CREATE</span><span class="cc-name">Creator Diya</span></div>
+    </div>
+    <div class="cc" data-w="writer" onclick="enterWorld('writer')">
+      <span class="stk">✍️</span><span class="stk">🌙</span><span class="stk">🪶</span><span class="stk">📖</span>
+      <div class="cc-wrap"><img class="cc-img" src="writer.png" alt="Writer Diya"/></div>
+      <div class="cc-label"><span class="cc-num">WRITE</span><span class="cc-name">Writer Diya</span></div>
+    </div>
+    <div class="cc" data-w="facts" onclick="enterWorld('facts')">
+      <span class="stk">🧶</span><span class="stk">🎵</span><span class="stk">🌸</span><span class="stk">☕</span>
+      <div class="cc-wrap"><img class="cc-img" src="random.png" alt="Just Diya"/></div>
+      <div class="cc-label"><span class="cc-num">EXPLORE</span><span class="cc-name">Just Diya</span></div>
+    </div>
+  </div>
+</div>
+
+<button id="skipBtn" onclick="skipToHub()">Skip intro</button>
+<button id="sndBtn">🔊</button>
+
+<script>
+// ── CURSOR ──
+document.addEventListener('mousemove',e=>{
+  const c=document.getElementById('cur');
+  c.style.left=e.clientX+'px';c.style.top=e.clientY+'px';
+});
+
+// ── AUDIO ──
+let sndOn=true,actx=null;
+function initAudio(){if(actx)return;try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,initAudio,{once:true}));
+document.getElementById('sndBtn').onclick=()=>{sndOn=!sndOn;document.getElementById('sndBtn').textContent=sndOn?'🔊':'🔇';};
+function tone(f,dur,vol,type){
+  if(!sndOn||!actx)return;
+  try{const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=type||'triangle';o.frequency.value=f;g.gain.setValueAtTime(vol||.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);o.start();o.stop(actx.currentTime+dur);}catch(e){}
+}
+function keyTick(){tone(800+Math.random()*200,.06,.04,'square');}
+function chime(f){tone(f||523,.7,.07,'triangle');}
+function revealChime(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>chime(f),i*90));}
+function whoosh(){
+  if(!sndOn||!actx)return;
+  try{const b=actx.createBuffer(1,actx.sampleRate*.4,actx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const s=actx.createBufferSource(),fl=actx.createBiquadFilter(),g=actx.createGain();fl.type='bandpass';fl.frequency.value=600;s.buffer=b;s.connect(fl);fl.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.09,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.4);s.start();s.stop(actx.currentTime+.4);}catch(e){}
+}
+
+// ── STARS ──
+const SC=document.getElementById('stars'),SX=SC.getContext('2d');
+let stars=[];
+function initStars(){
+  SC.width=innerWidth;SC.height=innerHeight;
+  stars=Array.from({length:140},()=>({x:Math.random()*SC.width,y:Math.random()*SC.height,r:Math.random()*1.1+.15,o:Math.random()*.3+.04,sp:Math.random()*.4+.05}));
+}
+function drawStars(){
+  SX.clearRect(0,0,SC.width,SC.height);
+  stars.forEach(s=>{s.o+=Math.sin(Date.now()*s.sp*.001)*.003;SX.beginPath();SX.arc(s.x,s.y,s.r,0,Math.PI*2);SX.fillStyle=`rgba(200,190,255,${Math.abs(s.o)})`;SX.fill();});
+}
+function startStars(){requestAnimationFrame(function loop(){drawStars();requestAnimationFrame(loop);});}
+
+// ── HELPERS ──
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function easeOut(t){return 1-Math.pow(1-t,3);}
+function easeInOut(t){return t<.5?2*t*t:-1+(4-2*t)*t;}
+function lerp(a,b,t){return a+(b-a)*t;}
+function animRAF(dur,fn){
+  return new Promise(res=>{
+    let t0=null;
+    function tick(now){if(!t0)t0=now;const p=Math.min((now-t0)/dur,1);fn(p);if(p<1)requestAnimationFrame(tick);else res();}
+    requestAnimationFrame(tick);
+  });
+}
+function fadeEl(el,from,to,dur){return animRAF(dur,p=>el.style.opacity=lerp(from,to,easeOut(p)));}
+
+// ── TYPING ENGINE ──
+const typeEl=document.getElementById('typeText');
+async function typeString(str,speed){
+  for(let i=0;i<str.length;i++){
+    typeEl.textContent=str.slice(0,i+1);
+    keyTick();
+    await sleep(speed+(Math.random()*speed*.4));
+  }
+}
+async function deleteString(speed){
+  const cur=typeEl.textContent;
+  for(let i=cur.length;i>=0;i--){
+    typeEl.textContent=cur.slice(0,i);
+    if(i>0)keyTick();
+    await sleep(speed+(Math.random()*speed*.2));
+  }
+}
+
+// ── SEQUENCE ──
+let skipped=false;
+
+async function runIntro(){
+  await sleep(800);
+  if(skipped)return;
+
+  // Q1
+  await typeString('who am i?',90);
+  await sleep(1400);if(skipped)return;
+  await deleteString(55);
+  await sleep(600);if(skipped)return;
+
+  // Q2
+  await typeString('what am i?',90);
+  await sleep(1400);if(skipped)return;
+  await deleteString(55);
+  await sleep(600);if(skipped)return;
+
+  // Q3 — stays longer
+  await typeString('why am i?',90);
+  await sleep(2200);if(skipped)return;
+  await deleteString(55);
+  await sleep(900);if(skipped)return;
+
+  // Final — slower, deliberate
+  await typeString('hi, i\'m diya.',65);
+  if(skipped)return;
+
+  // glow
+  typeEl.classList.add('glow');
+  await sleep(2000);if(skipped)return;
+
+  // fade out "hi," — keep "i'm diya"
+  // we'll just replace text gradually
+  const full="hi, i'm diya.";
+  const keep="i'm diya.";
+  // animate "hi, " fading: swap text
+  await animRAF(500,p=>{
+    // fade the whole thing slightly, then we'll reposition
+    typeEl.style.opacity=lerp(1,0,easeInOut(p));
+  });
+  typeEl.textContent=keep;
+  typeEl.classList.remove('glow');
+  typeEl.style.opacity='0';
+  await sleep(100);
+
+  // show stars & stage B bg
+  document.getElementById('stars').style.opacity='1';
+  document.getElementById('stageA').style.background='#07060c';
+
+  // measure typeEl position (center of screen)
+  await fadeEl(typeEl,0,1,400);
+  await sleep(200);if(skipped)return;
+
+  // get current position — it's in center of stageA
+  const rect=typeEl.getBoundingClientRect();
+  const startL=rect.left,startT=rect.top;
+  const startSz=parseFloat(getComputedStyle(typeEl).fontSize);
+
+  // switch to fixed to animate freely
+  typeEl.style.position='fixed';
+  typeEl.style.left=startL+'px';
+  typeEl.style.top=startT+'px';
+  typeEl.style.fontSize=startSz+'px';
+  typeEl.style.whiteSpace='nowrap';
+  document.getElementById('stageA').style.display='none';
+
+  // target: left-aligned, bigger serif font
+  // switch font
+  typeEl.style.fontFamily="'Cormorant Garamond',serif";
+  typeEl.style.fontWeight='700';
+  typeEl.style.letterSpacing='-.01em';
+
+  const targetSz=Math.min(innerWidth*.08,96);
+  const targetL=innerWidth*.10;
+  const targetT=innerHeight*.5-targetSz*.55;
+
+  // slide left + grow
+  await animRAF(800,p=>{
+    const e=easeInOut(p);
+    typeEl.style.left=lerp(startL,targetL,e)+'px';
+    typeEl.style.top=lerp(startT,targetT,e)+'px';
+    typeEl.style.fontSize=lerp(startSz,targetSz,e)+'px';
+  });
+  if(skipped)return;
+
+  // now text shows "i'm diya." — we want only "I'm" to stay
+  // fade out " diya." part — we do this by splitting
+  typeEl.textContent='';
+  const imSpan=document.createElement('span');imSpan.textContent="I'm";
+  const diyaSpan=document.createElement('span');diyaSpan.textContent=" diya.";diyaSpan.style.transition='opacity .5s ease';
+  typeEl.appendChild(imSpan);typeEl.appendChild(diyaSpan);
+  await sleep(600);if(skipped)return;
+  diyaSpan.style.opacity='0';
+  await sleep(600);if(skipped)return;
+  diyaSpan.remove();
+
+  // hide the blink cursor
+  document.getElementById('blinkCursor').style.display='none';
+
+  // now run rolling words next to this "I'm"
+  await runRolling(typeEl,targetL,targetT,targetSz);
+}
+
+// ── ROLLING WORDS ──
+const WORDS1=['a creator.','a coder.','a storyteller.','an editor.','a student.','an entrepreneur.'];
+const WORDS2=["a dreamer.","a collector of memories.","fueled by late-night ideas.","the friend who takes too many photos.","someone who starts too many projects.","a hopeless romantic."];
+const STILL="still figuring it out.";
+const FAST=['Creator','Coder','Writer','Dreamer','Student','Entrepreneur','Storyteller','Memory Collector','Creator','Coder','Writer','Dreamer'];
+
+async function runRolling(imEl,imL,imT,imSz){
+  if(skipped)return;
+  const win=document.getElementById('roll-win');
+  const inner=document.getElementById('roll-inner');
+  const lineH=imSz*1.08;
+
+  // position window right of I'm
+  const imW=imEl.getBoundingClientRect().width;
+  win.style.cssText=`position:fixed;left:${imL+imW+innerWidth*.025}px;top:${imT}px;height:${lineH}px;opacity:1;overflow:hidden`;
+
+  let totalItems=0;
+
+  async function rollWord(text,holdMs,speed){
+    const div=document.createElement('div');
+    div.className='roll-word';
+    div.textContent=text;
+    div.style.fontSize=imSz+'px';
+    div.style.height=lineH+'px';
+    inner.appendChild(div);
+    totalItems++;
+    // animate scroll
+    const fromY=-((totalItems-2)*lineH);
+    const toY=-((totalItems-1)*lineH);
+    await animRAF(speed||360,p=>inner.style.transform=`translateY(${lerp(fromY,toY,easeOut(p))}px)`);
+    chime([523,587,659,698,784,880][Math.floor(Math.random()*6)]);
+    await sleep(holdMs);
+  }
+
+  // phase 1 — fast, professional
+  for(const w of WORDS1){if(skipped)return;await rollWord(w,820,340);}
+
+  // phase 2 — personal, slowing
+  for(let i=0;i<WORDS2.length;i++){if(skipped)return;await rollWord(WORDS2[i],900+i*200,360);}
+
+  // PAUSE — "still figuring it out."
+  if(skipped)return;
+  await rollWord(STILL,100,360);
+  // everything stops
+  await sleep(3200);
+  if(skipped)return;
+
+  // FAST SPIN
+  let speed=300;
+  for(let i=0;i<FAST.length;i++){
+    if(skipped)return;
+    speed=Math.max(40,speed-20);
+    await rollWord(FAST[i],0,speed);
+  }
+
+  // disappear
+  await Promise.all([
+    fadeEl(imEl,1,0,400),
+    fadeEl(win,1,0,400)
+  ]);
+  imEl.style.display='none';
+  win.style.display='none';
+
+  if(skipped)return;
+  runHere();
+}
+
+// ── I'M HERE ──
+async function runHere(){
+  if(skipped)return;
+  const sc=document.getElementById('stageC');
+  sc.style.opacity='1';
+  await fadeEl(document.getElementById('here-el'),0,1,1200);
+  revealChime();
+  await sleep(3500);if(skipped)return;
+  await fadeEl(sc,1,0,700);
+  sc.style.opacity='0';
+  await sleep(300);
+  runHub();
+}
+
+// ── HUB ──
+function runHub(){
+  const sd=document.getElementById('stageD');
+  sd.style.opacity='1';sd.classList.add('live');
+  setTimeout(()=>document.getElementById('hubSub').classList.add('in'),250);
+  setTimeout(()=>document.getElementById('hubTitle').classList.add('in'),450);
+  setTimeout(()=>{
+    document.querySelectorAll('.cc').forEach((c,i)=>{
+      setTimeout(()=>c.classList.add('in'),i*140+100);
+    });
+    revealChime();
+  },650);
+  document.getElementById('skipBtn').classList.remove('on');
+}
+
+// ── SKIP ──
+function skipToHub(){
+  skipped=true;
+  document.getElementById('stars').style.opacity='1';
+  document.getElementById('stageA').style.display='none';
+  document.getElementById('stageB').style.opacity='0';
+  document.getElementById('stageC').style.opacity='0';
+  document.getElementById('skipBtn').classList.remove('on');
+  if(document.getElementById('typeText').style.position==='fixed'){
+    document.getElementById('typeText').style.display='none';
+  }
+  document.getElementById('blinkCursor').style.display='none';
+  runHub();
+}
+
+// ── WORLD ──
+const WC={coder:'#22d3ee',creator:'#fb923c',writer:'#818cf8',facts:'#f9a8d4'};
+const WF={coder:'world-coder.html',creator:'world-creator.html',writer:'world-writer.html',facts:'world-facts.html'};
+function enterWorld(w){
+  sessionStorage.setItem('diya_visited','1');
+  const ov=document.getElementById('wov');
+  ov.style.background=WC[w];ov.style.opacity='1';
+  whoosh();chime(880);
+  setTimeout(()=>window.location.href=WF[w],540);
+}
+
+// ── BOOT ──
+window.addEventListener('resize',initStars);
+initStars();
+startStars();
+
+if(sessionStorage.getItem('diya_visited')){
+  // returning from a world — skip straight to hub
+  document.getElementById('stars').style.opacity='1';
+  document.getElementById('stageA').style.display='none';
+  document.getElementById('blinkCursor').style.display='none';
+  document.getElementById('sndBtn').classList.add('on');
+  runHub();
+} else {
+  document.getElementById('skipBtn').classList.add('on');
+  document.getElementById('sndBtn').classList.add('on');
+  runIntro();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Writer Diya — World 03</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#05040f;--indigo:#818cf8;--lavender:#c4b5fd;
+      --ivory:#e4e0f4;--muted:#4a4666;--border:rgba(129,140,248,0.1);
+      --display:'Cormorant Garamond',serif;
+      --body:'Plus Jakarta Sans',sans-serif;
+    }
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--ivory);font-family:var(--body);overflow-x:hidden;cursor:none}
+    #cursor{position:fixed;width:8px;height:8px;border-radius:50%;background:var(--indigo);
+      pointer-events:none;z-index:9999;transform:translate(-50%,-50%);
+      box-shadow:0 0 12px 4px rgba(129,140,248,0.5);mix-blend-mode:screen}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:rgba(129,140,248,0.2);border-radius:2px}
+    canvas#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+    .back-btn{position:fixed;top:1.5rem;left:1.5rem;z-index:100;
+      font-family:var(--body);font-size:0.75rem;color:var(--muted);
+      text-decoration:none;border:1px solid var(--border);
+      padding:0.45rem 1rem;border-radius:0.5rem;
+      transition:color 0.2s,border-color 0.2s;
+      background:rgba(5,4,15,0.85);backdrop-filter:blur(12px)}
+    .back-btn:hover{color:var(--indigo);border-color:rgba(129,140,248,0.4)}
+    .world-badge{position:fixed;top:1.5rem;right:1.5rem;z-index:100;
+      font-size:0.62rem;letter-spacing:0.14em;color:var(--indigo);
+      border:1px solid var(--border);padding:0.38rem 0.9rem;border-radius:2rem;
+      background:rgba(5,4,15,0.85);backdrop-filter:blur(12px)}
+
+    /* ── HERO — full-width editorial, matching coder/creator ── */
+    .hero{
+      min-height:100vh;display:flex;flex-direction:column;
+      justify-content:flex-end;padding:0 8vw 6rem;
+      position:relative;z-index:1;overflow:hidden;
+      border-bottom:1px solid var(--border)
+    }
+
+    /* floating stickers */
+    .float-sticker{
+      position:absolute;opacity:0.13;pointer-events:none;
+      animation:fsf 6s ease-in-out infinite
+    }
+    @keyframes fsf{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+
+    .hero-kicker{
+      font-family:var(--body);font-size:0.72rem;letter-spacing:0.22em;
+      text-transform:uppercase;color:var(--muted);margin-bottom:2rem;opacity:0
+    }
+    .hero-statement{
+      font-family:var(--display);font-weight:700;
+      font-size:clamp(4rem,10vw,9.5rem);letter-spacing:-0.02em;line-height:0.92;
+      opacity:0;max-width:14ch
+    }
+    .hero-statement em{font-style:italic;color:var(--indigo)}
+
+    .hero-bottom{
+      margin-top:3rem;display:flex;align-items:flex-end;
+      justify-content:space-between;flex-wrap:wrap;gap:2rem;opacity:0
+    }
+    .hero-desc{font-size:0.95rem;color:var(--muted);max-width:42ch;line-height:1.75}
+    .hero-quote-inline{
+      font-family:var(--display);font-style:italic;font-size:1rem;
+      color:rgba(129,140,248,0.5);max-width:28ch;text-align:right;line-height:1.6
+    }
+
+    /* ── ESSAYS ── */
+    .essays-section{padding:7rem 8vw;position:relative;z-index:1}
+    .section-eyebrow{
+      font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;
+      color:var(--indigo);margin-bottom:0.8rem
+    }
+    .section-title{
+      font-family:var(--display);font-weight:700;font-style:italic;
+      font-size:clamp(2rem,4.5vw,3.5rem);letter-spacing:-0.01em;margin-bottom:4rem
+    }
+
+    .piece{
+      display:grid;grid-template-columns:60px 1fr;gap:0 3.5rem;
+      margin-bottom:0;padding:3.5rem 0;
+      border-top:1px solid var(--border);align-items:start;opacity:0
+    }
+    .piece:last-child{border-bottom:1px solid var(--border)}
+
+    .piece-num{
+      font-family:var(--display);font-style:italic;font-weight:700;
+      font-size:3.5rem;color:rgba(129,140,248,0.12);line-height:1;padding-top:0.1rem
+    }
+    .piece-tag{
+      font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;
+      color:var(--indigo);margin-bottom:0.8rem
+    }
+    .piece-title{
+      font-family:var(--display);font-weight:700;
+      font-size:clamp(1.6rem,3vw,2.5rem);letter-spacing:-0.01em;
+      line-height:1.1;margin-bottom:1rem
+    }
+    .piece-excerpt{
+      font-size:0.9rem;color:var(--muted);line-height:1.85;
+      max-width:54ch;font-weight:400
+    }
+    .piece-excerpt em{font-style:italic;color:rgba(129,140,248,0.65)}
+    .piece-link{
+      display:inline-block;margin-top:1.3rem;font-size:0.75rem;
+      letter-spacing:0.1em;color:var(--indigo);text-decoration:none;
+      border-bottom:1px solid rgba(129,140,248,0.3);padding-bottom:1px;
+      transition:border-color 0.2s
+    }
+    .piece-link:hover{border-color:var(--indigo)}
+
+    /* ── POEMS ── */
+    .poems-section{
+      padding:7rem 8vw;border-top:1px solid var(--border);
+      position:relative;z-index:1
+    }
+
+    .poems-intro{
+      font-family:var(--display);font-weight:700;
+      font-size:clamp(2rem,4.5vw,3.5rem);font-style:italic;
+      letter-spacing:-0.01em;margin-bottom:1.5rem;max-width:20ch
+    }
+    .poems-sub{
+      font-size:0.9rem;color:var(--muted);max-width:46ch;
+      line-height:1.8;margin-bottom:4rem
+    }
+
+    .poems-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+    .poem-card{
+      background:rgba(129,140,248,0.03);border:1px solid var(--border);
+      border-radius:1.2rem;padding:1.8rem;
+      transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),border-color 0.3s;
+      opacity:0;position:relative;overflow:hidden
+    }
+    .poem-card::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at top,rgba(129,140,248,0.06),transparent 70%);
+      opacity:0;transition:opacity 0.3s
+    }
+    .poem-card:hover{transform:translateY(-4px);border-color:rgba(129,140,248,0.25)}
+    .poem-card:hover::before{opacity:1}
+    .poem-trigger{
+      font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;
+      color:var(--indigo);margin-bottom:0.8rem
+    }
+    .poem-name{
+      font-family:var(--display);font-weight:700;font-style:italic;
+      font-size:1.2rem;letter-spacing:-0.01em;margin-bottom:0.5rem
+    }
+    .poem-line{font-size:0.82rem;color:var(--muted);line-height:1.65;font-style:italic}
+
+    /* ── ABOUT ── */
+    .about-section{
+      padding:7rem 8vw;border-top:1px solid var(--border);
+      display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;
+      position:relative;z-index:1
+    }
+    .about-left{
+      font-family:var(--display);font-weight:700;
+      font-size:clamp(2.5rem,5vw,4.5rem);letter-spacing:-0.01em;line-height:1.05
+    }
+    .about-left em{font-style:italic;color:var(--indigo)}
+    .about-right{font-size:0.92rem;color:var(--muted);line-height:1.9}
+    .about-right p+p{margin-top:1.1rem}
+
+    footer{
+      padding:2.5rem 8vw;border-top:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+      position:relative;z-index:1
+    }
+    .footer-orb{width:30px;height:30px;border-radius:50%;cursor:pointer;
+      background:radial-gradient(circle,#c4b5fd,#7c3aed);
+      box-shadow:0 0 18px rgba(167,139,250,0.4);transition:transform 0.3s ease}
+    .footer-orb:hover{transform:scale(1.2)}
+    .footer-text{font-size:0.65rem;color:var(--muted);letter-spacing:0.05em}
+
+    @media(max-width:700px){
+      .piece{grid-template-columns:1fr}
+      .piece-num{font-size:2.5rem}
+      .poems-grid{grid-template-columns:1fr}
+      .about-section{grid-template-columns:1fr;gap:2rem}
+    }
+  </style>
+<style>.snav{font-family:monospace;font-size:0.68rem;letter-spacing:0.1em;color:#5a5570;text-decoration:none;transition:color 0.2s}.snav:hover{color:#f2eff9}.sdiv{color:#2a2840;font-size:0.68rem}</style>
+</head>
+<body>
+<div id="cursor"></div>
+<canvas id="stars"></canvas>
+<a class="back-btn" href="index.html">← universe</a>
+<div class="world-badge">WORLD 03 / WRITER</div>
+
+<!-- HERO -->
+<section class="hero">
+  <!-- stickers -->
+  <span class="float-sticker" style="top:12%;right:9%;font-size:2.2rem;animation-delay:0s">✍️</span>
+  <span class="float-sticker" style="top:30%;right:20%;font-size:1.6rem;animation-delay:1.2s">🌙</span>
+  <span class="float-sticker" style="top:55%;right:8%;font-size:1.3rem;animation-delay:2s">🪶</span>
+  <span class="float-sticker" style="top:70%;right:32%;font-size:1.1rem;animation-delay:0.7s">📖</span>
+  <span class="float-sticker" style="top:42%;right:38%;font-size:1rem;animation-delay:1.8s">⭐</span>
+
+  <div class="hero-kicker" id="hk">world_03 / writer</div>
+  <h1 class="hero-statement" id="hs">
+    Writing is how I <em>understand.</em>
+  </h1>
+  <div class="hero-bottom" id="hb">
+    <p class="hero-desc">Essays, personal letters, reflections, poems. The part of me that has to get things out. Writing isn't separate from my life — it's how I make sense of it.</p>
+    <p class="hero-quote-inline">"I write when words are the only thing that fits the feeling."</p>
+  </div>
+</section>
+
+<!-- ESSAYS -->
+<section class="essays-section">
+  <div class="section-eyebrow">// personal essays</div>
+  <h2 class="section-title">Things I've written.</h2>
+
+  <div class="piece">
+    <div class="piece-num">01</div>
+    <div>
+      <div class="piece-tag">PERSONAL ESSAY · DIGITAL PROJECT</div>
+      <h2 class="piece-title">dear every girl i've been</h2>
+      <p class="piece-excerpt">A digital scrapbook of letters to versions of myself I'm still learning to understand. <em>To the girl who thought being quiet was the same as being small.</em> Built as a full web project with page-flip animations and a pastel aesthetic — because some writing deserves its own world.</p>
+      <a class="piece-link" href="https://diya186.github.io" target="_blank">Read the project ↗</a>
+    </div>
+  </div>
+
+  <div class="piece">
+    <div class="piece-num">02</div>
+    <div>
+      <div class="piece-tag">PERSONAL ESSAY · ONGOING</div>
+      <h2 class="piece-title">Things I Know Now (That I Didn't at Sixteen)</h2>
+      <p class="piece-excerpt">A running list of truths, contradictions, and small epiphanies collected across two years of university, two countries, and about a hundred different versions of what I thought my life would look like. <em>Unfinished, by design.</em></p>
+    </div>
+  </div>
+
+  <div class="piece">
+    <div class="piece-num">03</div>
+    <div>
+      <div class="piece-tag">PERSONAL ESSAY · REFLECTION</div>
+      <h2 class="piece-title">On Learning to Lead Without a Title</h2>
+      <p class="piece-excerpt">A reflection on what it actually means to influence people — written over a semester of watching others lead, and quietly realizing I already was. <em>Leadership, I've come to believe, is less about position and more about presence.</em></p>
+    </div>
+  </div>
+
+</section>
+
+<!-- POEMS -->
+<section class="poems-section">
+  <h2 class="poems-intro">I write poems at the edges of things.</h2>
+  <p class="poems-sub">When I feel something too intensely to say it plainly, I write a poem instead. They're not for performance. They're for the overflow — the 2am feeling with no other home.</p>
+
+      <div class="poems-grid">
+    <div class="poem-card">
+      <div class="poem-trigger">WHEN I FEEL → IN LOVE</div>
+      <div class="poem-name">What the Movies Forgot</div>
+      <p class="poem-line">"Nobody talks about the grief hidden inside love — the fear that one day you'll have to miss someone who still exists."</p>
+    </div>
+    <div class="poem-card">
+      <div class="poem-trigger">WHEN I FEEL → NOSTALGIC</div>
+      <div class="poem-name">Rooms That Remember Me</div>
+      <p class="poem-line">"I leave places all the time. Why do they keep leaving with me?"</p>
+    </div>
+    <div class="poem-card">
+      <div class="poem-trigger">WHEN I FEEL → LOST</div>
+      <div class="poem-name">The Distance Between Here and Here</div>
+      <p class="poem-line">"I thought growing up meant becoming someone. Nobody mentioned all the disappearing."</p>
+    </div>
+    <div class="poem-card">
+      <div class="poem-trigger">WHEN I FEEL → HOPEFUL</div>
+      <div class="poem-name">Evidence of Arrival</div>
+      <p class="poem-line">"Somewhere in the future, there's a version of me relieved I kept going."</p>
+    </div>
+    <div class="poem-card">
+      <div class="poem-trigger">WHEN I FEEL → OVERWHELMED</div>
+      <div class="poem-name">Too Many Lives</div>
+      <p class="poem-line">"I wasn't built to be one person. That's why choosing hurts."</p>
+    </div>
+    <div class="poem-card">
+      <div class="poem-trigger">WHEN I FEEL → SELF-REFLECTIVE</div>
+      <div class="poem-name">Who Gets to Keep Me?</div>
+      <p class="poem-line">"Every year I become someone new. I wonder which version gets buried to make room."</p>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about-section">
+  <div class="about-left">
+    Writing is<br>how I <em>think.</em>
+  </div>
+  <div class="about-right">
+    <p>Before I was a coder or a designer or a student, I was a reader. Words were the first technology I ever loved — the way you can arrange twenty-six letters into something that makes a stranger feel less alone.</p>
+    <p>My writing lives at the intersection of personal and precise. Whether it's an essay or a poem at midnight, I try to say exactly what I mean. No filler. No performance. Just the honest version.</p>
+    <p>Words on paper. Words out loud. Same discipline. I was school media lead, volleyball team captain, and a public speaking competitor — and every version of that was just finding a different format for the same thing.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-orb" onclick="window.location.href='index.html'"></div>
+  <div class="footer-text">diya · world 03 / 04</div>
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+const cur=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>gsap.to(cur,{x:e.clientX,y:e.clientY,duration:0.07}));
+
+// stars
+const canvas=document.getElementById('stars'), ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+const stars=Array.from({length:160},()=>({
+  x:Math.random()*canvas.width,y:Math.random()*canvas.height,
+  r:Math.random()*1.3+0.15,o:Math.random()*0.35+0.04
+}));
+function drawStars(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  stars.forEach(s=>{
+    s.o+=(Math.random()-0.5)*0.008;
+    s.o=Math.max(0.02,Math.min(0.45,s.o));
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(200,190,255,${s.o})`; ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+gsap.to('#hk',{opacity:1,duration:0.6,delay:0.3});
+gsap.fromTo('#hs',{opacity:0,y:30},{opacity:1,y:0,duration:0.9,delay:0.5,ease:'power3.out'});
+gsap.to('#hb',{opacity:1,duration:0.8,delay:0.85});
+
+gsap.utils.toArray('.piece').forEach(p=>{
+  gsap.to(p,{opacity:1,duration:0.7,scrollTrigger:{trigger:p,start:'top 82%'}});
+});
+gsap.utils.toArray('.poem-card').forEach((c,i)=>{
+  gsap.fromTo(c,{opacity:0,y:18},{opacity:1,y:0,duration:0.5,delay:i*0.08,
+    scrollTrigger:{trigger:c,start:'top 88%'}});
+});
+</script>
+<div style="position:fixed;bottom:1.8rem;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:0.8rem;background:rgba(0,0,0,0.45);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.07);padding:0.5rem 1.2rem;border-radius:2rem;"><a href="https://github.com/Diya186" target="_blank" class="snav">github</a><span class="sdiv">|</span><a href="https://www.linkedin.com/in/diya-rathod-571a55302/" target="_blank" class="snav">linkedin</a><span class="sdiv">|</span><a href="mailto:rathoddiya610@gmail.com" class="snav">email</a></div>
+</body>
+</html>
